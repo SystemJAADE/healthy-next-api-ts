@@ -7,10 +7,6 @@ import { AccountDto } from './dto/account.dto';
 export class AccountsRepository {
   constructor(private prisma: PrismaService) {}
 
-  async getAccount(where: Prisma.AccountWhereUniqueInput): Promise<Account> {
-    return this.prisma.account.findUnique({ where });
-  }
-
   async getAccountByCredentialIdentifier(identifier: string): Promise<any> {
     const account = await this.prisma.account.findFirst({
       where: {
@@ -32,6 +28,9 @@ export class AccountsRepository {
             },
           },
         },
+        patient: true,
+        doctor: true,
+        admin: true,
       },
     });
 
@@ -77,10 +76,22 @@ export class AccountsRepository {
 
       const permissionsArray = Array.from(permissionsMap.values());
 
-      return {
+      const filteredAccount = {
         ...account,
         permission: permissionsArray,
       };
+
+      if (!account.patient) {
+        delete filteredAccount.patient;
+      }
+      if (!account.doctor) {
+        delete filteredAccount.doctor;
+      }
+      if (!account.admin) {
+        delete filteredAccount.admin;
+      }
+
+      return filteredAccount;
     }
 
     return account;
@@ -101,19 +112,14 @@ export class AccountsRepository {
           secondSurname: data.secondSurname,
           firstName: data.firstName,
           middleName: data.middleName,
+          documentType: data.documentType,
           documentIdentity: data.documentIdentity,
           gender: data.gender,
           cellPhone: data.cellPhone,
-          homePhone: data.homePhone,
           address: data.address,
           ubigeoDepartment: {
             connect: {
               id: data.ubigeoDepartmentId,
-            },
-          },
-          ubigeoDistrict: {
-            connect: {
-              id: data.ubigeoDistrictId,
             },
           },
           ubigeoProvince: {
@@ -121,6 +127,12 @@ export class AccountsRepository {
               id: data.ubigeoProvinceId,
             },
           },
+          ubigeoDistrict: {
+            connect: {
+              id: data.ubigeoDistrictId,
+            },
+          },
+          emailAddress: data.emailAddress,
         },
       });
 
